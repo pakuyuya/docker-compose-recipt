@@ -1,0 +1,61 @@
+version: '3'
+services:
+    postgres:
+      image: postgres:9.5
+      restart: always
+      env_file: postgresql.env
+      environment:
+       - "POSTGRES_USER=${POSTGRES_USER}"
+       - "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"
+       - "POSTGRES_DB=gogs"
+      volumes:
+       - "db-data:/var/lib/postgresql/data"
+      networks:
+       - gogs
+    gogs:
+      image: gogs/gogs:0.11.86
+      restart: always
+      ports:
+       - "10022:22"
+       - "3000:3000"
+      links:
+       - postgres
+      environment:
+       - "RUN_CROND=true"
+      networks:
+       - gogs
+      volumes:
+       - "gogs-data:/data"
+      depends_on:
+       - postgres
+    docker-registory:
+      image: registry:2.7.1
+      restart: always
+      ports:
+        - 5000:5000
+      volumes:
+        - docker-registory-data:/var/lib/registry
+      networks:
+        - registory
+    docker-registry-fontend:
+      image: konradkleine/docker-registry-frontend:v2
+      environment:
+        - "ENV_DOCKER_REGISTRY_HOST=docker-registory"
+        - "ENV_DOCKER_REGISTRY_PORT=5000"
+      ports:
+        - 5001:80
+      networks:
+        - registory
+networks:
+    gogs:
+      driver: bridge
+    registory:
+      driver: bridge
+volumes:
+    db-data:
+      driver: local
+    gogs-data:
+      driver: local
+    docker-registory-data:
+      driver: local
+
